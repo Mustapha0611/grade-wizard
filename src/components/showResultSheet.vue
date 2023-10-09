@@ -1,5 +1,6 @@
 <template>
   <div class="showRes">
+    <h6 style="color:red;" v-if="noCourse ">Please Enter at least one Course</h6>
     <section v-if="courses.length < 1" class="add-course">
       COURSES WILL BE DISPLAYED HERE
     </section>
@@ -18,11 +19,10 @@
       <ion-content>
         <section class="content">
           <ion-card>
-            <ion-card-header>
-              <ion-card-title> Result</ion-card-title>
-              <ion-buttons slot="end">
-                <ion-button @click="close()">Close</ion-button>
-              </ion-buttons>
+            <ion-card-header class="header-slide">
+              <ion-card-title> Result
+              </ion-card-title>
+             
             </ion-card-header>
             <ion-card-content>
               <p>Total Credit Unit Registered :{{ totalgrade }}</p>
@@ -127,7 +127,8 @@ export default {
       nextGpa: 0,
       studyHours: "",
       openPredictive: false,
-      hasError:false
+      hasError:false,
+      noCourse:false
     };
   },
   computed: {
@@ -137,9 +138,14 @@ export default {
   }, 
    mounted() {
     this.$store.dispatch("loadStorage");
+    this.train;
   },
   methods: {
     showTotalCu() {
+    if(this.$store.getters.courses < 1){
+     this.noCourse = true;
+    }else{
+     this.noCourse = false;
       this.totalgrade = 0;
       this.totalPoints = 0;
       for (let i = 0; i < this.courses.length; i++) {
@@ -160,12 +166,13 @@ export default {
           console.log("hello");
         }
         this.totalPoints += points;
-
+    
         // console.log(this.courses);
         // console.log(this.totalgrade);
       }
       this.gpa = this.totalPoints / this.totalgrade;
       this.isOpen = true;
+    }
     },
     close() {
       this.isOpen = false;
@@ -176,6 +183,7 @@ export default {
     goHome() {
       this.isOpen = false;
       this.openPredictive = false;
+      this.studyHours = '';
     },
     clearStorage() {
       this.$store.dispatch("clearStorage");
@@ -408,8 +416,8 @@ export default {
       // Compile the model
       model.compile({ optimizer: "sgd", loss: "meanSquaredError" });
 
-      // Train the model
-      model.fit(xTrain, yTrain, { epochs: 2000, shuffle: true });
+      // // Train the model
+      // model.fit(xTrain, yTrain, { epochs: 2000, shuffle: true });
       //   // Make predictions
       const inputTensor = tf.tensor2d([[this.gpa, parseInt(this.studyHours)]]);
       const predictions = model.predict(inputTensor);
@@ -424,12 +432,23 @@ export default {
       } else {
         this.nextGpa = predictedGPA.toFixed(2);
       }
-
+      
       // this.nextGpa;
       console.log(this.nextGpa, inputTensor);
       console.log(tf.metrics.meanAbsoluteError)
     }
     },
+    train(){
+      // Create a linear regression model using Tensorflow JS
+      const model = tf.sequential();
+      model.add(tf.layers.dense({ units: 1, inputShape: [2] }));
+
+      // Compile the model
+      model.compile({ optimizer: "sgd", loss: "meanSquaredError" });
+
+      // Train the model
+      model.fit(xTrain, yTrain, { epochs: 50, shuffle: true });
+    }
     
   },
   
@@ -448,13 +467,15 @@ export default {
 }
 .add-course {
   height: 100px;
-  margin: 0 2%;
+  /* width:90%;
+  margin:; */
   border-radius: 5px;
   display: flex;
   justify-content: center;
   align-items: center;
   border: 1px solid rgb(100, 100, 100);
 }
+
 .course {
   display: flex;
   justify-content: space-around;
